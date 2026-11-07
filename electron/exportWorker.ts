@@ -1,6 +1,7 @@
 import { parentPort, workerData } from 'worker_threads'
 import { runWeliveExport, type WeliveExportEvent } from './services/weliveBridge'
 import { getWeliveFallbackReason } from './services/weliveFallback'
+import { reserveSessionOutputPath } from './services/export/utils/sessionOutputPath'
 
 interface ExportWorkerConfig {
   mode?: 'sessions' | 'single' | 'contacts'
@@ -288,6 +289,7 @@ async function runWeliveEngine() {
     ? (effectiveOptions.sessionLayout ?? 'per-session')
     : 'shared'
   const reservedOutputPaths = new Set<string>()
+  const reservedSessionOutputPaths = new Map<string, string>()
   const rawExportsDir = path.join(rawRoot, 'exports')
 
   const getFormatExtension = (format: string) => {
@@ -312,7 +314,12 @@ async function runWeliveEngine() {
     const useSessionFolder = sessionLayout === 'per-session'
     const sessionDirName = sessionNameWithTypePrefix ? `${sessionTypePrefix}${safeName}` : safeName
     const sessionDir = useSessionFolder ? path.join(exportBaseDir, sessionDirName) : exportBaseDir
-    const preferredOutputPath = path.join(sessionDir, `${fileNameWithPrefix}${getFormatExtension(String(effectiveOptions.format || 'json'))}`)
+    const preferredOutputPath = await reserveSessionOutputPath(
+      path.join(sessionDir, `${fileNameWithPrefix}${getFormatExtension(String(effectiveOptions.format || 'json'))}`),
+      sessionId,
+      reservedSessionOutputPaths,
+      useSessionFolder
+    )
     return normalizeExportConflictStrategy(effectiveOptions.exportConflictStrategy) === 'rename'
       ? reserveUniqueOutputPath(preferredOutputPath, reservedOutputPaths)
       : preferredOutputPath

@@ -10,6 +10,7 @@ import type { ExportTask, ExportTaskPayload, TaskStatus } from '../types'
 import { createEmptyProgress } from '../constants'
 import { useExportTaskStore } from '../../../stores/exportTaskStore'
 import { buildProgressPayloadSignature } from '../utils/progress'
+import { resolveExportTaskCompletion } from '../utils/taskResult'
 import { resolvePerfStageByPhase, applyProgressToTaskPerformance } from '../utils/performance'
 import { emitExportSessionStatus, onExportSessionStatusRequest } from '../../../services/exportBridge'
 import { useAutomationStore } from './useAutomation'
@@ -154,11 +155,12 @@ export function useExportTasks(): ExportTasksResult {
           { taskId }
         )
 
+        const completion = resolveExportTaskCompletion(payload, result)
         updateTask(taskId, (task) => ({
           ...task,
-          status: result?.success ? 'success' : 'error',
+          ...completion,
+          progress: { ...task.progress, ...completion.progress },
           finishedAt: Date.now(),
-          error: result?.error || undefined,
           sessionOutputPaths: result?.sessionOutputPaths
         }))
 
@@ -171,11 +173,11 @@ export function useExportTasks(): ExportTasksResult {
               updatedAt: finishedAt,
               runState: {
                 ...(prev.runState || {}),
-                lastRunStatus: result?.success ? 'success' : 'error',
+                lastRunStatus: completion.status,
                 lastFinishedAt: finishedAt,
-                lastSuccessAt: result?.success ? finishedAt : prev.runState?.lastSuccessAt,
-                lastError: result?.success ? undefined : (result?.error || '导出失败'),
-                successCount: result?.success ? previousSuccessCount + 1 : previousSuccessCount
+                lastSuccessAt: completion.status === 'success' ? finishedAt : prev.runState?.lastSuccessAt,
+                lastError: completion.status === 'success' ? undefined : (completion.error || completion.progress.phaseLabel),
+                successCount: completion.status === 'success' ? previousSuccessCount + 1 : previousSuccessCount
               }
             }
           })

@@ -1,6 +1,6 @@
 {
   "name": "weflow",
-  "version": "5.0.0-fixed.2",
+  "version": "5.0.0-fixed.3",
   "description": "WeFlow",
   "main": "dist-electron/main.js",
   "author": {
@@ -21,7 +21,9 @@
     "preview": "vite preview",
     "electron:dev": "node scripts/prepare-electron-runtime.cjs && vite --mode electron",
     "electron:build": "npm run build",
-    "test:welive-fallback": "node --test scripts/welive-fallback.test.mjs"
+    "test:welive-fallback": "node --test scripts/welive-fallback.test.mjs",
+    "test:export-task-result": "node --test scripts/export-task-result.test.mjs",
+    "test:session-output-path": "node --test scripts/session-output-path.test.mjs"
   },
   "dependencies": {
     "@hicccc77/electron-liquid-glass": "^0.3.0",

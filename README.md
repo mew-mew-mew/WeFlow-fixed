@@ -6,18 +6,21 @@ Windows x64 的 WeFlow 5.0.0 社区修复分支，处理旧版数据库组件到
 
 ## 下载
 
-前往 [Releases](https://github.com/mew-mew-mew/WeFlow-fixed/releases) 下载 `WeFlow-5.0.0-fixed.2-Setup.exe`。
+前往 [Releases](https://github.com/mew-mew-mew/WeFlow-fixed/releases) 下载 `WeFlow-5.0.0-fixed.3-Setup.exe`。
 同一发布中提供 SHA256SUMS.txt，可用 PowerShell 的 `Get-FileHash` 核对下载文件。
 
 要求：Windows 10 或更高版本、x64；上游声明支持电脑版微信 4.0 及以上，具体版本兼容性仍需自行验证。
 
 ## 本分支改了什么
 
+- 同名会话自动使用独立文件名和会话目录，已有 JSON 属于其他会话时不会被覆盖。
+- 批量导出显示真实成功与失败数量，可展开失败会话原因；结束后不再保留最后一个会话的消息进度。
+
 - WeLive 明确返回 `this build has expired` 且全部导出失败时，自动使用内置兼容导出流程；保留原有崩溃回退，其他错误仍按原样报告。
 - 两处读取组件截止时间由 2026 年延长至 2037 年，总计修改 4 个字节。
 - 保留原始组件哈希、修复后哈希、字节位置和可复现的带校验脚本。
 - 将上游定时和自动发布工作流归档为文本，避免发布未验证的平台版本。
-- 版本号标记为 `5.0.0-fixed.2`。
+- 版本号标记为 `5.0.0-fixed.3`。
 
 参见 [修复范围、证据和验证记录](docs/windows-expiry-fix.md)。
 这次修复未修改系统时间、微信程序或聊天数据。发布内容仅含应用代码、组件和构建产物。

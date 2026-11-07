@@ -160,9 +160,16 @@ export interface ExportTask {
   startedAt?: number
   finishedAt?: number
   error?: string
+  resultSummary?: ExportTaskResultSummary
   payload: ExportTaskPayload
   progress: TaskProgress
   performance?: TaskPerformance
+}
+
+export interface ExportTaskResultSummary {
+  successCount: number
+  failCount: number
+  failedSessions: Array<{ sessionId: string; name: string; error: string }>
 }
 
 // ─── Export Dialog ────────────────────────────────────────────

@@ -80,7 +80,7 @@ const TaskCenter: React.FC<TaskCenterProps> = ({
           const labelAlreadyHasCount = hasMessageProgress && /\d[\d,]*\s*\/\s*\d[\d,]*\s*条/.test(phaseLabel)
           const countText = hasMessageProgress
             ? `${Math.max(0, Math.floor(Number(task.progress.phaseProgress) || 0)).toLocaleString()} / ${Math.max(0, Math.floor(Number(task.progress.phaseTotal) || 0)).toLocaleString()} 条`
-            : `${Math.max(0, Math.floor(Number(task.progress.current) || 0))} / ${Math.max(0, Math.floor(Number(task.progress.total) || 0))}`
+            : `${Math.max(0, Math.floor(Number(task.progress.current) || 0))} / ${Math.max(0, Math.floor(Number(task.progress.total) || 0))} 个会话`
           return (
           <div key={task.id} className={`task-card export-task status-${task.status}`}>
             <div className="task-card-header">
@@ -91,7 +91,7 @@ const TaskCenter: React.FC<TaskCenterProps> = ({
                   {task.status === 'success' && <CheckCircle2 size={12} />}
                   {task.status === 'error' && <XCircle size={12} />}
                   {task.status === 'cancel_requested' && <Loader2 className="spin" size={12} />}
-                  {task.status === 'running' ? '导出中' : task.status === 'success' ? '已完成' : task.status === 'cancel_requested' ? '取消中' : '失败'}
+                  {task.status === 'running' ? '导出中' : task.status === 'success' ? '已完成' : task.status === 'cancel_requested' ? '取消中' : (task.resultSummary?.successCount || 0) > 0 ? '部分失败' : '失败'}
                 </span>
               </div>
               <div className="task-actions">
@@ -116,6 +116,16 @@ const TaskCenter: React.FC<TaskCenterProps> = ({
               </div>
               
               {task.error && <div className="task-error-msg">{task.error}</div>}
+              {Boolean(task.resultSummary?.failedSessions.length) && (
+                <details className="task-error-msg">
+                  <summary>查看 {task.resultSummary!.failedSessions.length} 个失败会话的原因</summary>
+                  <ul>
+                    {task.resultSummary!.failedSessions.map(failed => (
+                      <li key={failed.sessionId}>{failed.name}：{failed.error}</li>
+                    ))}
+                  </ul>
+                </details>
+              )}
             </div>
           </div>
           )

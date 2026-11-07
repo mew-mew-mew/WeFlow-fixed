@@ -33,6 +33,7 @@ import { getAvatarFallback } from '../../export/contacts/avatarHelper';
 import { pathExists, ensureExportDir, copyFileOptimized, hardlinkOrCopyFile } from '../../export/media/fileCopy';
 import { getMediaFileStat } from '../../export/media/attachmentResolver';
 import { ExportContext } from "../core/ExportContext";
+import { reserveSessionOutputPath } from '../utils/sessionOutputPath';
 import { ChatLabFormatter } from '../formatters/ChatLabFormatter';
 import { ExcelFormatter } from '../formatters/ExcelFormatter';
 import { HtmlFormatter } from '../formatters/HtmlFormatter';
@@ -164,6 +165,7 @@ export class ExportOrchestrator {
             : outputDir
           const createdTaskDirs = new Set<string>()
           const reservedOutputPaths = new Set<string>()
+          const reservedSessionOutputPaths = new Map<string, string>()
           const ensureTaskDir = async (dirPath: string) => {
             if (createdTaskDirs.has(dirPath)) return
             await ensureExportDir(dirPath, control)
@@ -375,10 +377,6 @@ export class ExportOrchestrator {
               const sessionDirName = sessionNameWithTypePrefix ? `${sessionTypePrefix}${safeName}` : safeName
               const sessionDir = useSessionFolder ? path.join(exportBaseDir, sessionDirName) : exportBaseDir
 
-              if (useSessionFolder) {
-                await ensureTaskDir(sessionDir)
-              }
-
               let ext = '.json'
               if (effectiveOptions.format === 'chatlab-jsonl') ext = '.jsonl'
               else if (effectiveOptions.format === 'excel') ext = '.xlsx'
@@ -387,7 +385,15 @@ export class ExportOrchestrator {
               else if (effectiveOptions.format === 'weclone') ext = '.csv'
               else if (effectiveOptions.format === 'html') ext = '.html'
               else if (effectiveOptions.format === 'sql') ext = '.sql'
-              const preferredOutputPath = path.join(sessionDir, `${fileNameWithPrefix}${ext}`)
+              const preferredOutputPath = await reserveSessionOutputPath(
+                path.join(sessionDir, `${fileNameWithPrefix}${ext}`),
+                sessionId,
+                reservedSessionOutputPaths,
+                useSessionFolder
+              )
+              if (useSessionFolder) {
+                await ensureTaskDir(path.dirname(preferredOutputPath))
+              }
               const canTrySkipUnchanged = canTrySkipUnchangedTextSessions &&
                 typeof messageCountHint === 'number' &&
                 messageCountHint >= 0 &&
