@@ -1,5 +1,6 @@
 import { parentPort, workerData } from 'worker_threads'
 import { runWeliveExport, type WeliveExportEvent } from './services/weliveBridge'
+import { getWeliveFallbackReason } from './services/weliveFallback'
 
 interface ExportWorkerConfig {
   mode?: 'sessions' | 'single' | 'contacts'
@@ -145,8 +146,8 @@ if (config.userDataPath) {
 }
 process.env.WEFLOW_PROJECT_NAME = process.env.WEFLOW_PROJECT_NAME || 'WeFlow'
 
-// 消息导出强制走 WeLive 引擎（不提供 legacy 回退开关）；
-// 仅联系人导出仍由 worker 内置流程处理。
+// 消息导出优先使用 WeLive；组件过期或原生崩溃时使用兼容导出流程。
+// 联系人导出仍由 worker 内置流程处理。
 const shouldUseWeliveEngine = () => config.mode !== 'contacts'
 
 const normalizeImageXorKey = (value: unknown): string | number | undefined => {
@@ -239,24 +240,6 @@ const mapWeliveEventToProgress = (event: WeliveExportEvent): any | null => {
     estimatedTotalMessages,
     phaseLabel: String((event as any).label || '').trim() || fallbackLabel
   }
-}
-
-const collectWeliveErrorText = (result: any): string => {
-  const parts = [
-    result?.error,
-    result?.stderr,
-    ...Object.values(result?.failedSessionErrors || {})
-  ]
-  return parts
-    .map((value) => String(value || '').trim())
-    .filter(Boolean)
-    .join('\n')
-}
-
-const isWeliveNativeCrashResult = (result: any): boolean => {
-  if (!result || result.success) return false
-  const text = collectWeliveErrorText(result)
-  return /3221225477|0x?c0000005|-1073741819/i.test(text)
 }
 
 async function runWeliveEngine() {
@@ -494,6 +477,7 @@ async function runLegacyEngine() {
     dbPath: config.dbPath,
     decryptKey: config.decryptKey,
     myWxid: config.myWxid,
+    accountDir: config.accountDir,
     imageXorKey: config.imageXorKey,
     imageAesKey: config.imageAesKey,
     resourcesPath: config.resourcesPath,
@@ -574,7 +558,8 @@ async function runLegacyEngine() {
 async function run() {
   if (shouldUseWeliveEngine()) {
     const result = await runWeliveEngine()
-    if (!isWeliveNativeCrashResult(result)) {
+    const fallbackReason = getWeliveFallbackReason(result)
+    if (!fallbackReason) {
       flushProgress()
       flushCreatedPaths()
       parentPort?.postMessage({
@@ -588,7 +573,9 @@ async function run() {
       current: 0,
       total: Array.isArray(config.sessionIds) ? config.sessionIds.length : 1,
       phase: 'preparing',
-      phaseLabel: 'WeLive 导出引擎异常退出，正在切换兼容导出引擎'
+      phaseLabel: fallbackReason === 'expired'
+        ? '导出组件已过期，正在使用兼容方式导出'
+        : 'WeLive 导出引擎异常退出，正在切换兼容导出引擎'
     })
     flushProgress()
     flushCreatedPaths()
