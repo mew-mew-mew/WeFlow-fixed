@@ -9,7 +9,7 @@ Windows x64 的 WeFlow 5.0.0 社区修复分支，处理旧版数据库组件到
 前往 [Releases](https://github.com/mew-mew-mew/WeFlow-fixed/releases) 下载 `WeFlow-5.0.0-fixed.3-Setup.exe`。
 同一发布中提供 SHA256SUMS.txt，可用 PowerShell 的 `Get-FileHash` 核对下载文件。
 
-要求：Windows 10 或更高版本、x64；上游声明支持电脑版微信 4.0 及以上，具体版本兼容性仍需自行验证。
+要求：Windows 10 或更高版本、x64；上游声明支持电脑版微信 4.0 及以上，具体版本兼容性仍需自行验证，我这里使用的是4.2.0.13。
 
 ## 本分支改了什么
 
